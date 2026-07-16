@@ -6,7 +6,9 @@ import { firebaseClientConfig, hasFirebaseClientConfig } from "./client-config";
 
 export function getFirebaseApp() {
   if (!hasFirebaseClientConfig()) {
-    throw new Error("Firebase client config is missing. Check web/.env.local.");
+    throw new Error(
+      "Firebase client config is missing. Check your Firebase environment variables.",
+    );
   }
   return getApps().length ? getApp() : initializeApp(firebaseClientConfig);
 }
