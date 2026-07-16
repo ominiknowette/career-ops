@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createUserWithEmailAndPassword, getRedirectResult, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithRedirect, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, getRedirectResult, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
 import { ArrowRight, CheckCircle2, CircleUser, Eye, EyeOff, FileText, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { CareerOpsLogo } from "@/components/career-ops-logo";
 import { cn } from "@/lib/cn";
@@ -31,7 +29,7 @@ function friendlyAuthError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err || "");
   const host = typeof window !== "undefined" ? window.location.hostname : "this domain";
   if (message.includes("auth/unauthorized-domain")) return `Google sign-in is blocked because ${host} is not an authorized Firebase domain. Add it in Firebase Authentication -> Settings -> Authorized domains.`;
-  if (message.includes("auth/popup-blocked")) return "Your browser blocked the Google sign-in popup. Try again; Google sign-in now uses redirect.";
+  if (message.includes("auth/popup-blocked")) return "Your browser blocked the Google sign-in popup. Allow popups for this site and try again.";
   if (message.includes("auth/invalid-credential")) return "Email or password is incorrect.";
   if (message.includes("auth/email-already-in-use")) return "An account already exists with this email. Try signing in.";
   if (message.includes("auth/weak-password")) return "Use a stronger password with at least 6 characters.";
@@ -44,8 +42,11 @@ function friendlyAuthError(err: unknown): string {
   return "Authentication failed. Check Firebase setup and try again.";
 }
 
+function goToDashboard() {
+  window.location.assign("/dashboard");
+}
+
 export function SignupPanel() {
-  const router = useRouter();
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -76,8 +77,7 @@ export function SignupPanel() {
           address: credential.user.email || "google-user@example.com",
           name: credential.user.displayName || fullName,
         });
-        if (pendingMode === "signin") router.push("/dashboard");
-        else setAccountReady(true);
+        goToDashboard();
       })
       .catch((err) => {
         if (cancelled) return;
@@ -91,7 +91,7 @@ export function SignupPanel() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   function rememberUser({ address = email, name = fullName }: { address?: string; name?: string } = {}) {
     const cleanEmail = address.trim() || "career-ops-user@example.com";
@@ -133,7 +133,7 @@ export function SignupPanel() {
         await updateProfile(credential.user, { displayName: fullName.trim() });
       }
       rememberUser({ address: credential.user.email || email, name: credential.user.displayName || fullName });
-      if (mode === "signin") router.push("/dashboard");
+      if (mode === "signin") goToDashboard();
       else setAccountReady(true);
     } catch (err) {
       setError(friendlyAuthError(err));
@@ -170,7 +170,13 @@ export function SignupPanel() {
     try {
       googleProvider.setCustomParameters({ prompt: "select_account" });
       sessionStorage.setItem(GOOGLE_AUTH_MODE_KEY, mode);
-      await signInWithRedirect(getFirebaseAuth(), googleProvider);
+      const credential = await signInWithPopup(getFirebaseAuth(), googleProvider);
+      sessionStorage.removeItem(GOOGLE_AUTH_MODE_KEY);
+      rememberUser({
+        address: credential.user.email || "google-user@example.com",
+        name: credential.user.displayName || fullName,
+      });
+      goToDashboard();
     } catch (err) {
       sessionStorage.removeItem(GOOGLE_AUTH_MODE_KEY);
       setError(friendlyAuthError(err));
@@ -494,12 +500,12 @@ function SubmittedPage({ firstName }: { firstName: string }) {
         <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#8a8178]">
           Nice, {firstName}. Your CV has been saved for this account. You can now continue into the Career-Ops setup guide.
         </p>
-        <Link
+        <a
           href="/dashboard"
           className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-lg bg-orange-600 text-sm font-semibold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500"
         >
           Open setup guide
-        </Link>
+        </a>
       </section>
     </main>
   );

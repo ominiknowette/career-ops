@@ -204,7 +204,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <PipelineProvider>
         <ApplyProvider>
           <ExploreProvider>
-            <MobileNav activeSection={activeSection} onDocNavigate={handleDocNavigation} />
+            <MobileNav activeSection={activeSection} onDocNavigate={handleDocNavigation} onLogout={logout} />
             <div className="min-h-screen md:flex md:h-screen md:overflow-hidden">
               <aside data-shell-sidebar className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-surface/30 md:flex xl:w-72">
                 <div className="shrink-0 px-4 pb-3 pt-4">

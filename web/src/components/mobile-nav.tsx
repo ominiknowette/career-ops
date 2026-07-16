@@ -3,7 +3,7 @@
 import { type MouseEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CareerOpsLogo } from "@/components/career-ops-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -17,7 +17,7 @@ const STYLE = `
 .co-mnav{position:sticky;top:0;z-index:30;background:var(--bg);padding-top:calc(env(safe-area-inset-top) + .8rem)}
 .co-mscrim{position:fixed;inset:0;z-index:60;background:rgba(8,8,12,.45);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .3s ease}
 .co-mscrim.open{opacity:1;pointer-events:auto}
-.co-mdrawer{position:fixed;top:0;right:0;bottom:0;z-index:61;width:min(22rem,88vw);display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;transform:translateX(102%);transition:transform .34s cubic-bezier(.32,.72,0,1);will-change:transform;box-shadow:-16px 0 48px -16px rgba(0,0,0,.4);padding-top:calc(env(safe-area-inset-top) + .25rem)}
+.co-mdrawer{position:fixed;top:0;right:0;bottom:0;z-index:61;width:min(22rem,88vw);height:100dvh;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain;transform:translateX(102%);transition:transform .34s cubic-bezier(.32,.72,0,1);will-change:transform;box-shadow:-16px 0 48px -16px rgba(0,0,0,.4);padding-top:calc(env(safe-area-inset-top) + .25rem)}
 .co-mdrawer.open{transform:translateX(0)}
 .co-msafe{padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
 @media(min-width:768px){.co-mnav,.co-mscrim,.co-mdrawer{display:none!important}}
@@ -27,9 +27,11 @@ const STYLE = `
 export function MobileNav({
   activeSection,
   onDocNavigate,
+  onLogout,
 }: {
   activeSection: string;
   onDocNavigate: (event: MouseEvent<HTMLAnchorElement>, id: string) => void;
+  onLogout: () => void;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -103,7 +105,7 @@ export function MobileNav({
           </button>
         </div>
 
-        <nav className="flex min-w-0 flex-col gap-5 px-3" aria-label="Documentation">
+        <nav className="flex min-h-0 min-w-0 flex-1 flex-col gap-5 overflow-y-auto px-3 pb-4" aria-label="Documentation">
           {DOC_NAV_GROUPS.map((group) => {
             const isCollapsed = Boolean(collapsed[group.title]);
             return (
@@ -175,8 +177,18 @@ export function MobileNav({
           </div>
         </nav>
 
-        <div className="co-msafe mt-auto flex items-center justify-between border-t border-border px-4 pt-4">
-          <span className="text-sm font-medium text-faint">Documentation</span>
+        <div className="co-msafe mt-auto flex shrink-0 items-center justify-between gap-3 border-t border-border px-4 pt-4">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+            className="doc-sidebar-link flex min-h-11 items-center gap-3 rounded-md px-2 py-2 text-left text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+          >
+            <LogOut className="size-4" />
+            Logout
+          </button>
           <ThemeToggle />
         </div>
       </aside>
