@@ -8,9 +8,7 @@ import {
   CircleCheck,
   FileText,
   SearchCheck,
-  ShieldCheck,
   Sparkles,
-  Terminal,
 } from "lucide-react";
 import { CareerOpsLogo } from "@/components/career-ops-logo";
 
@@ -65,17 +63,17 @@ export function LandingHero() {
           </div>
         </header>
 
-        <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center pt-12 text-center sm:pt-16 lg:pt-20">
-          <h1 className="max-w-5xl font-display text-[clamp(3.2rem,8.8vw,7rem)] leading-[0.92] tracking-normal text-[#eee7db]">
+        <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center pt-10 text-center sm:pt-14 lg:pt-20">
+          <h1 className="max-w-[900px] font-display text-[40px] leading-[0.96] tracking-normal text-[#eee7db] sm:text-[52px] lg:text-[68px] 2xl:text-[76px]">
             Turn your AI coding agent into a{" "}
             <span className="text-brand">career search command center.</span>
           </h1>
-          <p className="mt-7 max-w-2xl text-base leading-7 text-white/62 sm:text-lg">
+          <p className="mt-6 max-w-2xl text-base leading-7 text-white/62 sm:text-lg">
             Career-Ops connects your CV, preferences, and AI tools to evaluate opportunities, rank roles,
             and help you focus your job search.
           </p>
 
-          <div className="mt-9 flex w-full max-w-xl flex-col justify-center gap-3 sm:flex-row">
+          <div className="mt-8 flex w-full max-w-xl flex-col justify-center gap-3 sm:flex-row">
             <Link
               href={LOGIN_ROUTE}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_22px_70px_rgba(242,140,40,0.32)] transition hover:-translate-y-0.5 hover:bg-brand-200"
@@ -90,12 +88,6 @@ export function LandingHero() {
             </Link>
           </div>
 
-          <div className="mt-10 grid w-full max-w-3xl gap-3 text-left sm:grid-cols-3">
-            <ProofPoint icon={ShieldCheck} title="Private and secure" body="Your data stays in your control." />
-            <ProofPoint icon={Terminal} title="Agent-native" body="Works with the tools developers already use." />
-            <ProofPoint icon={ChartNoAxesCombined} title="Decision-focused" body="See where to apply and what to improve." />
-          </div>
-
           <ProductPreview />
         </section>
       </div>
@@ -103,29 +95,9 @@ export function LandingHero() {
   );
 }
 
-function ProofPoint({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="flex min-w-0 gap-3 rounded-xl border border-white/8 bg-white/[0.025] p-4 text-left backdrop-blur transition hover:border-orange-300/30 hover:bg-white/[0.045]">
-      <Icon className="mt-0.5 size-5 shrink-0 text-[#9fc56f]" />
-      <div className="min-w-0">
-        <h2 className="text-sm font-semibold text-white/92">{title}</h2>
-        <p className="mt-1 text-xs leading-5 text-white/52">{body}</p>
-      </div>
-    </div>
-  );
-}
-
 function ProductPreview() {
   return (
-    <div className="relative mt-14 w-full pb-16 sm:mt-16 lg:pb-20">
+    <div className="relative mt-16 w-full pb-16 sm:mt-20 lg:pb-20">
       <div className="pointer-events-none absolute -inset-x-10 top-8 h-40 rounded-[100%] border-t border-orange-400/30 bg-[radial-gradient(ellipse_at_center,rgba(242,140,40,0.24),transparent_68%)]" />
       <div className="relative mx-auto grid min-h-[34rem] max-w-6xl overflow-hidden rounded-[28px] border border-orange-400/22 bg-[#090806]/88 text-left shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_30px_120px_rgba(0,0,0,0.6)] backdrop-blur lg:grid-cols-[14rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-white/8 bg-white/[0.025] p-5 lg:flex lg:flex-col">
