@@ -220,12 +220,12 @@ export function SignupPanel() {
   }
 
   return (
-    <main className="min-h-screen bg-[#4a1b04] px-4 py-6 text-[#17120e] sm:px-6 lg:grid lg:place-items-center">
+    <main className="min-h-screen bg-[#faf7f2] px-4 py-6 text-[#111111] sm:px-6 lg:grid lg:place-items-center">
       <div className="absolute left-6 top-5">
         <CareerOpsLogo size="large" />
       </div>
 
-      <section className="mx-auto mt-14 grid w-full max-w-5xl overflow-hidden rounded-[24px] bg-[#fffaf4] p-3 shadow-2xl shadow-black/35 sm:rounded-[28px] lg:mt-0 lg:grid-cols-[1.04fr_0.96fr]">
+      <section className="mx-auto mt-14 grid w-full max-w-5xl overflow-hidden rounded-[24px] border border-[#e8ded2] bg-white p-3 shadow-2xl shadow-black/10 sm:rounded-[28px] lg:mt-0 lg:grid-cols-[1.04fr_0.96fr]">
         <div className="relative hidden min-h-[560px] overflow-hidden rounded-[22px] bg-[#080604] p-8 text-white lg:block">
           <div className="relative z-10 max-w-sm">
             <CareerOpsLogo size="large" />
@@ -424,11 +424,11 @@ function CvOnboardingPage({
   onSubmit: () => void;
 }) {
   return (
-    <main className="min-h-screen bg-[#4a1b04] px-4 py-6 text-[#17120e] sm:px-6 lg:grid lg:place-items-center">
+    <main className="min-h-screen bg-[#faf7f2] px-4 py-6 text-[#111111] sm:px-6 lg:grid lg:place-items-center">
       <div className="absolute left-6 top-5">
         <CareerOpsLogo size="large" />
       </div>
-      <section className="mx-auto mt-14 w-full max-w-3xl rounded-[24px] bg-[#fffaf4] p-5 shadow-2xl shadow-black/35 sm:rounded-[28px] sm:p-6 lg:mt-0 lg:p-10">
+      <section className="mx-auto mt-14 w-full max-w-3xl rounded-[24px] border border-[#e8ded2] bg-white p-5 shadow-2xl shadow-black/10 sm:rounded-[28px] sm:p-6 lg:mt-0 lg:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="grid size-12 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-600">
             <FileText className="size-6" />
@@ -491,8 +491,8 @@ function CvStep({
 
 function SubmittedPage({ firstName }: { firstName: string }) {
   return (
-    <main className="min-h-screen bg-[#4a1b04] px-4 py-6 text-[#17120e] sm:px-6 lg:grid lg:place-items-center">
-      <section className="mx-auto mt-16 w-full max-w-md rounded-[28px] bg-[#fffaf4] p-8 text-center shadow-2xl shadow-black/35 lg:mt-0">
+    <main className="min-h-screen bg-[#faf7f2] px-4 py-6 text-[#111111] sm:px-6 lg:grid lg:place-items-center">
+      <section className="mx-auto mt-16 w-full max-w-md rounded-[28px] border border-[#e8ded2] bg-white p-8 text-center shadow-2xl shadow-black/10 lg:mt-0">
         <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600">
           <CheckCircle2 className="size-9" />
         </div>

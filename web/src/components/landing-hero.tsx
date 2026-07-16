@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowRight,
   BookOpen,
   ChartNoAxesCombined,
   CircleCheck,
   FileText,
+  Menu,
   SearchCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 import { CareerOpsLogo } from "@/components/career-ops-logo";
 
@@ -27,30 +30,32 @@ const strengths = ["React", "AI tooling", "System design"];
 const gaps = ["Kubernetes", "Cloud infrastructure"];
 
 export function LandingHero() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <main className="min-h-screen overflow-hidden bg-[#050403] text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_34%,rgba(242,140,40,0.14),transparent_34%),radial-gradient(circle_at_50%_88%,rgba(242,140,40,0.28),transparent_34%),linear-gradient(180deg,#050403_0%,#0b0704_58%,#120804_100%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-[54rem] h-[22rem] w-[82rem] -translate-x-1/2 rounded-[100%] border border-orange-500/30 bg-orange-500/10 blur-sm" />
+    <main className="min-h-screen overflow-hidden bg-[#faf7f2] text-[#111111]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,rgba(242,140,40,0.16),transparent_30%),radial-gradient(circle_at_50%_82%,rgba(242,140,40,0.18),transparent_34%),linear-gradient(180deg,#faf7f2_0%,#fffaf4_54%,#faf7f2_100%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-[50rem] h-[18rem] w-[74rem] -translate-x-1/2 rounded-[100%] border border-orange-500/20 bg-orange-500/10 blur-sm" />
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
         <header className="flex items-center gap-4 py-5 sm:py-7">
           <Link href={LOGIN_ROUTE} className="flex min-w-0 items-center gap-3" aria-label="Career-Ops sign in">
             <CareerOpsLogo size="sidebar" />
-            <span className="text-lg font-semibold tracking-tight text-[#f5efe7] sm:text-xl">Career-Ops</span>
+            <span className="text-lg font-semibold tracking-tight text-[#111111] sm:text-xl">Career-Ops</span>
           </Link>
 
-          <nav className="mx-auto hidden items-center gap-8 text-sm font-medium text-white/72 lg:flex">
+          <nav className="mx-auto hidden items-center gap-8 text-sm font-medium text-[#6b625a] lg:flex">
             {navItems.map((item) => (
-              <Link key={item} href={LOGIN_ROUTE} className="transition hover:text-white">
+              <Link key={item} href={LOGIN_ROUTE} className="transition hover:text-[#111111]">
                 {item}
               </Link>
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          <div className="ml-auto hidden items-center gap-3 lg:flex">
             <Link
               href={LOGIN_ROUTE}
-              className="hidden rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white/88 transition hover:border-orange-300/60 hover:text-white sm:inline-flex"
+              className="rounded-full border border-[#e8ded2] bg-white/60 px-4 py-2 text-sm font-semibold text-[#111111] transition hover:border-orange-300/70 hover:text-[#f28c28]"
             >
               Sign in
             </Link>
@@ -61,14 +66,48 @@ export function LandingHero() {
               Get Started <ArrowRight className="size-4" />
             </Link>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="ml-auto inline-flex size-11 items-center justify-center rounded-full border border-[#e8ded2] bg-white/75 text-[#252a12] shadow-sm transition hover:border-orange-300/70 lg:hidden"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </header>
 
+        {mobileMenuOpen && (
+          <div className="mb-3 rounded-2xl border border-[#e8ded2] bg-white/90 p-3 shadow-xl shadow-black/5 lg:hidden">
+            <nav className="grid gap-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item}
+                  href={LOGIN_ROUTE}
+                  className="rounded-xl px-3 py-3 text-sm font-semibold text-[#6b625a] transition hover:bg-[#f2ece4] hover:text-[#111111]"
+                >
+                  {item}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-3 grid gap-2 border-t border-[#e8ded2] pt-3">
+              <Link href={LOGIN_ROUTE} className="rounded-full border border-[#e8ded2] bg-white px-4 py-3 text-center text-sm font-semibold text-[#111111]">
+                Sign in
+              </Link>
+              <Link href={LOGIN_ROUTE} className="rounded-full bg-brand px-4 py-3 text-center text-sm font-semibold text-white">
+                Get Started
+              </Link>
+            </div>
+          </div>
+        )}
+
         <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center pt-10 text-center sm:pt-14 lg:pt-20">
-          <h1 className="max-w-[900px] font-display text-[40px] leading-[0.96] tracking-normal text-[#eee7db] sm:text-[52px] lg:text-[68px] 2xl:text-[76px]">
+          <h1 className="max-w-[900px] font-display text-[40px] leading-[0.96] tracking-normal text-[#111111] sm:text-[52px] lg:text-[68px] 2xl:text-[76px]">
             Turn your AI coding agent into a{" "}
             <span className="text-brand">career search command center.</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-white/62 sm:text-lg">
+          <p className="mt-6 max-w-2xl text-base leading-7 text-[#6b625a] sm:text-lg">
             Career-Ops connects your CV, preferences, and AI tools to evaluate opportunities, rank roles,
             and help you focus your job search.
           </p>
@@ -82,7 +121,7 @@ export function LandingHero() {
             </Link>
             <Link
               href={LOGIN_ROUTE}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/18 bg-white/[0.03] px-6 py-3 text-sm font-semibold text-white/88 backdrop-blur transition hover:-translate-y-0.5 hover:border-orange-300/60 hover:text-white"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#e8ded2] bg-white/70 px-6 py-3 text-sm font-semibold text-[#111111] shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-orange-300/70 hover:text-[#f28c28]"
             >
               Explore Documentation <BookOpen className="size-4" />
             </Link>
@@ -97,9 +136,9 @@ export function LandingHero() {
 
 function ProductPreview() {
   return (
-    <div className="relative mt-16 w-full pb-16 sm:mt-20 lg:pb-20">
-      <div className="pointer-events-none absolute -inset-x-10 top-8 h-40 rounded-[100%] border-t border-orange-400/30 bg-[radial-gradient(ellipse_at_center,rgba(242,140,40,0.24),transparent_68%)]" />
-      <div className="relative mx-auto grid min-h-[34rem] max-w-6xl overflow-hidden rounded-[28px] border border-orange-400/22 bg-[#090806]/88 text-left shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_30px_120px_rgba(0,0,0,0.6)] backdrop-blur lg:grid-cols-[14rem_minmax(0,1fr)]">
+    <div className="relative mx-4 mt-16 w-[calc(100%-32px)] pb-16 sm:mx-0 sm:mt-20 sm:w-full lg:pb-20">
+      <div className="pointer-events-none absolute -inset-x-10 top-8 h-40 rounded-[100%] border-t border-orange-400/30 bg-[radial-gradient(ellipse_at_center,rgba(242,140,40,0.22),transparent_68%)]" />
+      <div className="relative mx-auto grid min-h-[34rem] max-w-6xl overflow-hidden rounded-[28px] border border-black/10 bg-[#0d0d0d] text-left shadow-[0_30px_80px_rgba(0,0,0,0.15)] backdrop-blur lg:grid-cols-[14rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-white/8 bg-white/[0.025] p-5 lg:flex lg:flex-col">
           <CareerOpsLogo size="sidebar" />
           <nav className="mt-8 space-y-1 text-sm">
@@ -155,7 +194,7 @@ function ProductPreview() {
                 <h2 className="mt-5 text-xl font-semibold tracking-tight text-white sm:text-2xl">
                   Senior Frontend Engineer
                 </h2>
-                <p className="mt-1 text-sm text-white/48">Remote · Full-time</p>
+                <p className="mt-1 text-sm text-white/48">Remote - Full-time</p>
               </div>
               <div className="text-left sm:text-right">
                 <div className="font-mono text-4xl font-semibold text-[#9fc56f]">
