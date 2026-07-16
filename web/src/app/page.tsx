@@ -1,5 +1,5 @@
-import { SignupPanel } from "@/components/auth/signup-panel";
+import { LandingHero } from "@/components/landing-hero";
 
 export default function Home() {
-  return <SignupPanel />;
+  return <LandingHero />;
 }
