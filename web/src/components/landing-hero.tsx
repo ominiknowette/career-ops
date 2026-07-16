@@ -33,9 +33,9 @@ export function LandingHero() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#faf7f2] text-[#111111]">
+    <main className="relative min-h-screen w-full max-w-full overflow-hidden bg-[#faf7f2] text-[#111111]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,rgba(242,140,40,0.16),transparent_30%),radial-gradient(circle_at_50%_82%,rgba(242,140,40,0.18),transparent_34%),linear-gradient(180deg,#faf7f2_0%,#fffaf4_54%,#faf7f2_100%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-[50rem] h-[18rem] w-[74rem] -translate-x-1/2 rounded-[100%] border border-orange-500/20 bg-orange-500/10 blur-sm" />
+      <div className="pointer-events-none absolute left-4 right-4 top-[42rem] h-40 max-w-[500px] rounded-[100%] border border-orange-500/15 bg-orange-500/10 opacity-70 blur-sm sm:left-1/2 sm:right-auto sm:top-[50rem] sm:h-[18rem] sm:w-[74rem] sm:max-w-none sm:-translate-x-1/2 sm:opacity-100" />
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
         <header className="flex items-center gap-4 py-5 sm:py-7">
@@ -102,7 +102,7 @@ export function LandingHero() {
           </div>
         )}
 
-        <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center pt-10 text-center sm:pt-14 lg:pt-20">
+        <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center overflow-hidden pt-10 text-center sm:pt-14 lg:overflow-visible lg:pt-20">
           <h1 className="max-w-[900px] font-display text-[40px] leading-[0.96] tracking-normal text-[#111111] sm:text-[52px] lg:text-[68px] 2xl:text-[76px]">
             Turn your AI coding agent into a{" "}
             <span className="text-brand">career search command center.</span>
@@ -136,8 +136,8 @@ export function LandingHero() {
 
 function ProductPreview() {
   return (
-    <div className="relative mx-4 mt-16 w-[calc(100%-32px)] pb-16 sm:mx-0 sm:mt-20 sm:w-full lg:pb-20">
-      <div className="pointer-events-none absolute -inset-x-10 top-8 h-40 rounded-[100%] border-t border-orange-400/30 bg-[radial-gradient(ellipse_at_center,rgba(242,140,40,0.22),transparent_68%)]" />
+    <div className="relative mx-auto mt-16 w-[calc(100%_-_32px)] max-w-[1100px] pb-16 sm:mt-20 sm:w-full lg:pb-20">
+      <div className="pointer-events-none absolute inset-x-0 top-8 h-32 rounded-[100%] border-t border-orange-400/20 bg-[radial-gradient(ellipse_at_center,rgba(242,140,40,0.14),transparent_68%)] sm:-inset-x-10 sm:h-40 sm:border-orange-400/30 sm:bg-[radial-gradient(ellipse_at_center,rgba(242,140,40,0.22),transparent_68%)]" />
       <div className="relative mx-auto grid min-h-[34rem] max-w-6xl overflow-hidden rounded-[28px] border border-black/10 bg-[#0d0d0d] text-left shadow-[0_30px_80px_rgba(0,0,0,0.15)] backdrop-blur lg:grid-cols-[14rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-white/8 bg-white/[0.025] p-5 lg:flex lg:flex-col">
           <CareerOpsLogo size="sidebar" />
