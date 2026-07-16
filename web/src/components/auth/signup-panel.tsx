@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createUserWithEmailAndPassword, getRedirectResult, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
-import { ArrowRight, CheckCircle2, CircleUser, Eye, EyeOff, FileText, Loader2, LockKeyhole, Mail } from "lucide-react";
+import { CheckCircle2, CircleUser, Eye, EyeOff, FileText, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { CareerOpsLogo } from "@/components/career-ops-logo";
 import { cn } from "@/lib/cn";
 import { writeStoredUser, writeUserCv } from "@/lib/browser-user";
@@ -221,7 +221,7 @@ export function SignupPanel() {
 
   return (
     <main className="min-h-screen bg-[#faf7f2] px-4 py-6 text-[#111111] sm:px-6 lg:grid lg:place-items-center">
-      <div className="absolute left-6 top-5">
+      <div className="absolute left-6 top-5 lg:hidden">
         <CareerOpsLogo size="large" />
       </div>
 
@@ -245,11 +245,8 @@ export function SignupPanel() {
         <div className="flex min-h-0 flex-col justify-center px-5 py-8 sm:min-h-[560px] sm:px-10 lg:px-14">
           <div className="mx-auto w-full max-w-sm">
             <div className="mb-7 flex items-center justify-between">
-              <div className="grid size-10 place-items-center rounded-full bg-orange-100 text-orange-600">
-                {accountReady ? <FileText className="size-5" /> : <ArrowRight className="size-5" />}
-              </div>
               {!accountReady && (
-                <div className="rounded-full bg-[#f1e6dc] p-1 text-xs font-medium">
+                <div className="ml-auto rounded-full bg-[#f1e6dc] p-1 text-xs font-medium">
                   <button
                     type="button"
                     onClick={() => setMode("signup")}

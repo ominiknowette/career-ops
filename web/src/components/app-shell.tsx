@@ -2,7 +2,7 @@
 
 import { type MouseEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { ChevronDown, LogOut } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -163,7 +163,6 @@ function useActiveDocSection(pathname: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [activeSection, setActiveSection] = useActiveDocSection(pathname);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const authPage = pathname === "/" || pathname === "/login";
@@ -179,7 +178,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       /* Local session cleanup still runs if Firebase is unavailable. */
     }
     clearStoredUser();
-    router.push("/");
+    window.location.assign("/");
   }
 
   function toggleGroup(title: string) {
