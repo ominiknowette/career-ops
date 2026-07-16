@@ -154,7 +154,7 @@ export function CvIngest({ onSaved }: { onSaved?: () => void }) {
       return;
     }
     onSaved?.();
-    // WOW #1 — land in the Explorer with the CV-derived filters in the URL + run=1,
+    // First value moment: land in Explorer with CV-derived filters in the URL + run=1,
     // so the Explorer auto-fires the FREE scan itself (robust, no push/replaceState race).
     // GENEROUS first scan so it never comes back empty (that would kill the wow): roles
     // only + a wide 30-day window; location stays a refinement for the deepen step, NOT a
@@ -308,7 +308,7 @@ export function CvIngest({ onSaved }: { onSaved?: () => void }) {
           <RotateCcw className="size-3.5" /> Start over
         </button>
         <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint">
-          <Lock className="size-3" /> Saved locally to cv.md
+          <Lock className="size-3" /> Saves locally to cv.md
         </span>
       </div>
     </div>

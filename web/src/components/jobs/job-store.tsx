@@ -10,15 +10,15 @@ export type Job = {
   id: string;
   title: string;
   subtitle?: string;
-  page?: string; // route the job was launched from / refers to
-  input?: string; // the URL/posting it processed (links inbox rows to their worker)
+  page?: string;
+  input?: string;
   kind?: string;
-  batchId?: string; // groups jobs fired together (e.g. "evaluate all Anthropic")
+  batchId?: string;
   status: "running" | "done" | "error";
   steps: JobStep[];
   text: string;
   result?: JobResult;
-  cost?: { tokens: number; usd?: number }; // per-run token cost (Claude result event) — local only
+  cost?: { tokens: number; usd?: number };
   startedAt: number;
   endedAt?: number;
 };
@@ -43,7 +43,7 @@ const CONFIG_KEY = "career-ops:config";
 const JOBS_KEY = "career-ops:jobs";
 
 function parseVerdict(text: string): JobResult {
-  const m = text.match(/VERDICT:\s*([\d.]+)\s*\/\s*5\s*[—:|-]+\s*(.+)/i);
+  const m = text.match(/VERDICT:\s*([\d.]+)\s*\/\s*5\s*(?:-|:|--)\s*(.+)/i);
   if (m) {
     const score = parseFloat(m[1]);
     return { score, summary: m[2].trim().replace(/\s+/g, " ").slice(0, 90), tone: scoreTone(`${score}`) };
@@ -56,19 +56,41 @@ function parseVerdict(text: string): JobResult {
   return { score: null, summary: "", tone: "muted" };
 }
 
+async function resolveRunnableCli(savedCliId: string | null): Promise<string | null> {
+  if (savedCliId) return savedCliId;
+  try {
+    const res = await fetch("/api/clis");
+    const data = (await res.json()) as { clis?: { id: string; installed: boolean }[] };
+    const installed = data.clis?.filter((cli) => cli.installed) ?? [];
+    return (
+      installed.find((cli) => cli.id === "claude")?.id ||
+      installed.find((cli) => cli.id === "opencode")?.id ||
+      installed.find((cli) => cli.id === "codex")?.id ||
+      installed[0]?.id ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
 export function JobsProvider({ children }: { children: React.ReactNode }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const seq = useRef(0);
   const loaded = useRef(false);
 
-  // restore history
   useEffect(() => {
     try {
       const raw = localStorage.getItem(JOBS_KEY);
       const arr = raw ? JSON.parse(raw) : null;
       if (Array.isArray(arr)) {
-        // anything left "running" from a previous session is stale → mark interrupted
-        setJobs(arr.map((j: Job) => (j.status === "running" ? { ...j, status: "error", steps: [...(j.steps || []), { kind: "status", label: "Interrupted (page reloaded)", ts: Date.now() }] } : j)));
+        setJobs(
+          arr.map((j: Job) =>
+            j.status === "running"
+              ? { ...j, status: "error", steps: [...(j.steps || []), { kind: "status", label: "Interrupted (page reloaded)", ts: Date.now() }] }
+              : j,
+          ),
+        );
       }
     } catch {
       /* ignore */
@@ -76,7 +98,6 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
     loaded.current = true;
   }, []);
 
-  // persist
   useEffect(() => {
     if (!loaded.current) return;
     try {
@@ -92,13 +113,14 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
 
   const startJob = useCallback(
     (opts: StartOpts): string | null => {
-      let cliId: string | null = null;
+      let savedCliId: string | null = null;
       try {
         const raw = localStorage.getItem(CONFIG_KEY);
-        cliId = raw ? JSON.parse(raw).cliId || null : null;
+        savedCliId = raw ? JSON.parse(raw).cliId || null : null;
       } catch {
-        cliId = null;
+        savedCliId = null;
       }
+
       const id = `job-${Date.now()}-${seq.current++}`;
       const job: Job = {
         id,
@@ -109,21 +131,16 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
         kind: opts.kind,
         batchId: opts.batchId,
         status: "running",
-        steps: [{ kind: "status", label: "Starting…", ts: Date.now() }],
+        steps: [{ kind: "status", label: "Starting...", ts: Date.now() }],
         text: "",
         startedAt: Date.now(),
       };
       setJobs((js) => [job, ...js]);
 
-      if (!cliId) {
-        patch(id, (j) => ({ ...j, status: "error", endedAt: Date.now(), steps: [...j.steps, { kind: "status", label: "No CLI configured — open Config", ts: Date.now() }] }));
-        return id;
-      }
-
       (async () => {
         let text = "";
-        let verdictLine = ""; // latched separately so the 8000-char tail can't drop it
-        let doneTokens = 0; // per-run token cost, forwarded on the done event (#6)
+        let verdictLine = "";
+        let doneTokens = 0;
         let doneCostUsd: number | null = null;
         const steps: JobStep[] = [];
         const finish = (status: "done" | "error", lastLabel?: string) => {
@@ -137,15 +154,13 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
             endedAt: Date.now(),
             steps: lastLabel ? [...j.steps, { kind: "status", label: lastLabel, ts: Date.now() }] : j.steps,
           }));
-          // persist a readable log file so the CLI/assistant can read past runs
+
           if (status === "done") {
             fetch("/api/runs/save", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id, title: opts.title, subtitle: opts.subtitle, page: opts.page, input: opts.input, result, cost, steps, output: text }),
             }).catch(() => {});
-            // Tell server-snapshot surfaces (Today, pipeline) to refetch — the
-            // worker just wrote a real tracker row / report they don't yet see.
             if (typeof window !== "undefined" && (opts.kind === "evaluate" || opts.kind === "pdf")) {
               window.dispatchEvent(new CustomEvent("co-job-done", { detail: { kind: opts.kind, input: opts.input } }));
             }
@@ -153,6 +168,17 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
         };
 
         try {
+          const cliId = await resolveRunnableCli(savedCliId);
+          if (!cliId) {
+            finish("error", "No local AI CLI found - open Config and select Claude Code/OpenCode.");
+            return;
+          }
+          if (!savedCliId) {
+            const label = `Using local ${cliId} worker`;
+            steps.push({ kind: "status", label, ts: Date.now() });
+            patch(id, (j) => ({ ...j, steps: [...j.steps, { kind: "status", label, ts: Date.now() }] }));
+          }
+
           const res = await fetch("/api/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -190,7 +216,6 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
                   text = full.slice(-8000);
                   patch(id, (j) => ({ ...j, text }));
                 } else if (ev.type === "done") {
-                  // finish happens on stream-close; capture the per-run cost it carries
                   if (typeof ev.tokens === "number") doneTokens = ev.tokens;
                   if (typeof ev.costUsd === "number") doneCostUsd = ev.costUsd;
                 } else if (ev.type === "error") {

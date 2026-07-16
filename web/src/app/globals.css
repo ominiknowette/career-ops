@@ -15,7 +15,7 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 }
 
 /* Semantic surfaces reference runtime vars so they swap with the theme class. */
@@ -61,11 +61,14 @@
 body {
   background: var(--bg);
   color: var(--fg);
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 html {
+  overflow-x: hidden;
   scrollbar-gutter: stable;
+  scroll-behavior: smooth;
 }
 
 @layer utilities {
@@ -77,6 +80,90 @@ html {
   .dot-bg {
     background-image: radial-gradient(circle, hsl(var(--dot)) 1px, transparent 1px);
     background-size: 24px 24px;
+  }
+}
+
+@layer components {
+  .doc-shell {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  .doc-container {
+    width: min(100%, 68rem);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 2.4vw, 2rem);
+  }
+
+  .doc-page-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.45rem, 5vw, 4.6rem);
+    line-height: 0.98;
+    letter-spacing: 0;
+    color: var(--landing);
+    text-wrap: balance;
+  }
+
+  .doc-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3.2vw, 2.75rem);
+    line-height: 1.04;
+    letter-spacing: 0;
+    color: var(--landing);
+    text-wrap: balance;
+  }
+
+  .doc-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  .doc-body {
+    font-size: 0.94rem;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  .doc-card-title {
+    font-size: 0.92rem;
+    line-height: 1.35;
+    font-weight: 650;
+    color: var(--fg);
+  }
+
+  .doc-label {
+    font-size: 0.68rem;
+    line-height: 1;
+    font-weight: 750;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .doc-sidebar-label {
+    font-size: 0.66rem;
+    line-height: 1;
+    font-weight: 760;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .doc-sidebar-link {
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 520;
+  }
+
+  .doc-code {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -115,6 +202,7 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .cli-cursor,
   .animate-terminal-popup,
   .animate-fade-in-delayed {

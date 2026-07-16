@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Wand2, Asterisk, Paperclip, Sparkles, ArrowUpRight, ShieldCheck, RotateCcw, FileCheck2, AlertTriangle, Terminal, Check, ScanLine, PenLine, CheckCircle2, Info, ExternalLink, MousePointerClick } from "lucide-react";
+import { Loader2, Wand2, Asterisk, Paperclip, Sparkles, ArrowUpRight, ShieldCheck, RotateCcw, FileCheck2, AlertTriangle, SquareTerminal, Check, ScanLine, PenLine, CheckCircle2, Info, ExternalLink, MousePointerClick } from "lucide-react";
 import type { ApplyIssue, DriveStep } from "@/lib/apply/issue";
 import { useApply } from "@/components/apply/apply-provider";
 import type { ApplyField } from "@/lib/apply/extract";
@@ -142,7 +142,7 @@ export function ApplyView() {
           {(prefilling || a.prefillLog.length > 0) && (
             <details className="mb-4 rounded-lg border border-border bg-surface/60 backdrop-blur-sm" open={false}>
               <summary className="flex cursor-pointer select-none items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted">
-                <Terminal className="size-3.5" /> Pre-fill diagnostics
+                <SquareTerminal className="size-3.5" /> Pre-fill diagnostics
                 {prefilling && <Loader2 className="size-3 animate-spin text-brand" />}
                 <span className="ml-auto text-faint">{a.prefillLog.length} steps</span>
               </summary>

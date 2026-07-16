@@ -6,7 +6,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Send, X, Loader2, Settings, RotateCcw, ArrowUpRight, Sparkles } from "lucide-react";
-import { CoMark } from "@/components/co-mark";
+import { CareerOpsLogo } from "@/components/career-ops-logo";
 import { useJobs } from "@/components/jobs/job-store";
 import { usePipeline } from "@/components/pipeline/pipeline-provider";
 import { useApply } from "@/components/apply/apply-provider";
@@ -90,7 +90,7 @@ function removeRanges(s: string, cuts: [number, number][]): string {
 // the user is looking at.
 function describePage(p: string): string {
   if (p === "/") return "Today / home — overview of the user's pipeline.";
-  if (p === "/pipeline") return "Pipeline — the applications table + the inbox of pending job URLs.";
+  if (p === "/pipeline") return "Pipeline - the applications table + the inbox of pending job URLs.";
   const m = p.match(/^\/pipeline\/([^/]+)$/);
   if (m)
     return `The user is viewing the EVALUATION REPORT for application #${m[1]}. If they say "this offer", "apply", "evaluate it", "draft a cover letter", they mean application #${m[1]} — read reports/${m[1]}-*.md or the matching data/applications.md row and act on THAT one.`;
@@ -477,7 +477,7 @@ export function AssistantConsole() {
           className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-border bg-surface/90 py-1.5 pl-1.5 pr-4 shadow-lg backdrop-blur transition-colors hover:bg-surface-hover"
           aria-label="Open assistant"
         >
-          <CoMark size={26} />
+          <CareerOpsLogo size="header" />
           <span className="text-sm font-medium">Ask</span>
         </button>
       )}
@@ -485,7 +485,7 @@ export function AssistantConsole() {
       {open && (
         <div className="fixed bottom-5 right-5 z-50 flex h-[600px] max-h-[80vh] w-[400px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
           <header className="flex items-center gap-2.5 border-b border-border px-4 py-3">
-            <CoMark size={26} />
+            <CareerOpsLogo size="header" />
             <div className="flex-1">
               <div className="text-sm font-semibold tracking-tight">Assistant</div>
               <div className="text-xs text-faint">{cliId ? `via ${cliId}` : "no CLI configured"}</div>

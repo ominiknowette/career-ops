@@ -1,4 +1,4 @@
-import { Inter, Instrument_Serif } from "next/font/google";
+import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 
 // Body / UI — Inter, same as the career-ops-docs home (next/font/google,
 // self-hosted: no CLS, GDPR-safe).
@@ -24,5 +24,11 @@ export const instrumentSerifItalic = Instrument_Serif({
   weight: "400",
   style: "italic",
   variable: "--font-instrument-serif-italic",
+  display: "swap",
+});
+
+export const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });

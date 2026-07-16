@@ -344,12 +344,21 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
     const intent = aiIntentRef.current.trim();
     if (!intent) return;
     let cliId: string | null = null;
+    let keyProvider: string | null = null;
     try {
-      cliId = JSON.parse(localStorage.getItem("career-ops:config") || "{}").cliId || null;
+      const config = JSON.parse(localStorage.getItem("career-ops:config") || "{}");
+      cliId = config.cliId || null;
+      keyProvider = config.mode === "key" ? config.provider || null : null;
     } catch {
       cliId = null;
+      keyProvider = null;
     }
     if (!cliId) {
+      if (keyProvider) {
+        setError("Your AI key is connected in gateway mode. The open-web AI search route still needs the server gateway implementation; use the free Scan or queue a site URL for now.");
+        setPhase("failed");
+        return;
+      }
       setPhase("blocked");
       return;
     }

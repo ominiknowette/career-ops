@@ -26,6 +26,7 @@ jds/*
 
 # Personal documents — never commit scans or copies of these (PII).
 # Catches common identity/credential filenames so they can't be staged by accident.
+*.pdf
 *passport*
 *diploma*
 *简历*
@@ -71,15 +72,21 @@ plugins.lock
 # Generated
 .resolved-prompt-*
 node_modules/
+web/next-dev*.log
 bun.lock
 # Report-number reservation sentinels (ephemeral, created by reserve-report-num.mjs)
 reports/*-RESERVED.md
 
 # Backup files written by normalize-statuses.mjs / dedup-tracker.mjs
 *.bak
+cv.md.bak-*
 
 # OpenRouter runner — generated data (personal, never commit)
 data/model-blacklist.json
+pipeline-pending-urls.txt
+
+# Web runtime cache (company logos, local assistant/session artifacts)
+.career-ops-web/
 
 # OS
 .DS_Store

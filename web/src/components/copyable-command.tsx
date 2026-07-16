@@ -4,8 +4,8 @@ import { useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Single-line monospace command + copy-to-clipboard — ported from the
-// career-ops-docs home. Truncates on narrow viewports (intent is "copy this").
+// Single-line monospace command + copy-to-clipboard. The wrapper is deliberately
+// shrink-safe so long commands cannot widen cards or push neighboring columns.
 export function CopyableCommand({
   command,
   className,
@@ -21,24 +21,24 @@ export function CopyableCommand({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Non-secure context or permission denied — fail silently.
+      // Non-secure context or permission denied: the visible command remains.
     }
   }
 
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-xl border border-border bg-surface py-1.5 pl-4 pr-1.5 font-mono text-sm text-muted shadow-sm",
+        "flex min-w-0 max-w-full items-center gap-2 overflow-hidden rounded-lg border border-border bg-surface py-1.5 pl-3 pr-1.5 text-muted shadow-sm",
         className,
       )}
     >
-      <code className="min-w-0 flex-1 truncate">
+      <code className="doc-code min-w-0 flex-1 truncate whitespace-nowrap" title={`$ ${command}`}>
         <span className="text-faint">$</span> {command}
       </code>
       <span
         aria-hidden="true"
         className={cn(
-          "hidden shrink-0 text-xs font-medium text-brand transition-opacity duration-200 sm:inline-block",
+          "hidden shrink-0 text-xs font-medium text-brand transition-opacity duration-200 lg:inline-block",
           copied ? "opacity-100" : "opacity-0",
         )}
       >

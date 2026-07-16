@@ -100,7 +100,7 @@ export function TodayDashboard({
             )}
           </h1>
           <p className="mt-4 max-w-xl text-sm text-muted">
-            {allClear ? "I'll keep scanning the market in the background and surface anything that fits." : "Your action queue for today — discovery and follow-ups, in one place."}
+            {allClear ? "New matches and follow-ups will appear here when the scanner finds something useful." : "Your action queue for today: fresh matches, follow-ups, and decisions."}
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition hover:bg-brand-200 max-sm:min-h-[44px]">
@@ -156,7 +156,7 @@ export function TodayDashboard({
         <div className="mt-8 rounded-2xl border border-border bg-surface/30 px-6 py-10 text-center">
           <Sparkles className="mx-auto size-6 text-brand" />
           <p className="mx-auto mt-3 max-w-md text-sm text-muted">
-            Nothing needs you right now. Run a <Link href="/explore" className="text-brand hover:underline">free scan</Link> to surface this week&apos;s roles, or check your <Link href="/pipeline" className="text-brand hover:underline">pipeline</Link>.
+            Nothing needs your attention right now. Run a <Link href="/explore" className="text-brand hover:underline">free scan</Link> for current roles, or review your <Link href="/pipeline" className="text-brand hover:underline">pipeline</Link>.
           </p>
         </div>
       )}

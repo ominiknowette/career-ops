@@ -12,7 +12,24 @@ import { atomicWrite } from "@/lib/core/safe-write";
 export function careerOpsRoot(): string {
   const env = process.env.CAREER_OPS_ROOT?.trim();
   if (env) return env;
-  return path.resolve(process.cwd(), "..");
+
+  const cwd = process.cwd();
+  const candidates = [cwd, path.resolve(cwd, "..")];
+  for (const candidate of candidates) {
+    try {
+      if (
+        fs.existsSync(path.join(candidate, "AGENTS.md")) &&
+        fs.existsSync(path.join(candidate, "scan-ats-full.mjs")) &&
+        fs.existsSync(path.join(candidate, "web"))
+      ) {
+        return candidate;
+      }
+    } catch {
+      /* keep looking */
+    }
+  }
+
+  return path.resolve(cwd, "..");
 }
 
 /**

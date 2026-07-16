@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Check,
   KeyRound,
-  TerminalSquare,
-  Terminal,
+  SquareTerminal,
   Loader2,
   CircleDashed,
   ExternalLink,
+  Globe2,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -25,12 +27,13 @@ type Mode = "cli" | "key" | "manual";
 
 const PROVIDERS = [
   { id: "anthropic", label: "Anthropic (Claude)" },
-  { id: "openai", label: "OpenAI" },
+  { id: "openai", label: "OpenAI / Codex" },
   { id: "google", label: "Google (Gemini)" },
   { id: "openrouter", label: "OpenRouter" },
 ] as const;
 
 const STORAGE_KEY = "career-ops:config";
+type GatewayStatus = Record<string, { configured: boolean; env: string; label: string; use: string }>;
 
 export function ConfigForm() {
   const [mode, setMode] = useState<Mode>("cli");
@@ -40,6 +43,8 @@ export function ConfigForm() {
   const [apiKey, setApiKey] = useState("");
   const [logos, setLogos] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({});
+  const [gatewayLoading, setGatewayLoading] = useState(true);
 
   // Load saved prefs
   useEffect(() => {
@@ -57,6 +62,15 @@ export function ConfigForm() {
     } catch {
       /* ignore */
     }
+  }, []);
+
+  useEffect(() => {
+    setGatewayLoading(true);
+    fetch("/api/gateway/status")
+      .then((res) => res.json())
+      .then((data) => setGatewayStatus(data.providers || {}))
+      .catch(() => setGatewayStatus({}))
+      .finally(() => setGatewayLoading(false));
   }, []);
 
   // Detect installed CLIs
@@ -77,11 +91,14 @@ export function ConfigForm() {
     // key/manual panel is unwired) and a secret must never sit in clear-text
     // localStorage. Keys belong in the user's own CLI/provider config.
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ mode, cliId, provider, logos }));
+    window.dispatchEvent(new Event("career-ops:config-updated"));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
 
   const installed = clis?.filter((c) => c.installed) ?? [];
+  const selectedGateway = gatewayStatus[provider];
+  const selectedGatewayConnected = Boolean(selectedGateway?.configured);
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
@@ -98,7 +115,7 @@ export function ConfigForm() {
         <ModeCard
           active={mode === "cli"}
           onClick={() => setMode("cli")}
-          icon={Terminal}
+          icon={SquareTerminal}
           title="Use an AI tool you have"
           hint="Recommended"
         />
@@ -107,13 +124,12 @@ export function ConfigForm() {
           onClick={() => setMode("key")}
           icon={KeyRound}
           title="Paste an AI key"
-          hint="Coming soon"
-          disabled
+          hint="Gateway setup"
         />
         <ModeCard
           active={mode === "manual"}
           onClick={() => setMode("manual")}
-          icon={TerminalSquare}
+          icon={SquareTerminal}
           title="No setup needed"
           hint="Coming soon"
           disabled
@@ -228,16 +244,37 @@ export function ConfigForm() {
                         : "border-border bg-surface/50 text-muted hover:bg-surface-hover hover:text-foreground",
                     )}
                   >
-                    {p.label}
+                    <span className="flex items-center justify-between gap-3">
+                      <span>{p.label}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          gatewayStatus[p.id]?.configured
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                            : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+                        )}
+                      >
+                        {gatewayLoading ? "checking" : gatewayStatus[p.id]?.configured ? "connected" : "missing env"}
+                      </span>
+                    </span>
                   </button>
                 ))}
               </div>
+              {selectedGateway && (
+                <p className="mt-2 text-xs text-faint">
+                  Server env: <code className="text-foreground">{selectedGateway.env}</code>{" "}
+                  {selectedGatewayConnected ? "is configured." : "is missing in this environment."}
+                </p>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                 Paste an AI key
               </label>
-              <p className="mb-2 text-xs text-faint">Bring a key from OpenAI, Anthropic, and others.</p>
+              <p className="mb-2 text-xs text-faint">
+                For Vercel, store secrets in Environment Variables. In local mode,
+                put them in <code className="text-foreground">web/.env.local</code> or the project root <code className="text-foreground">.env</code>.
+              </p>
               <input
                 type="password"
                 value={apiKey}
@@ -247,9 +284,36 @@ export function ConfigForm() {
                 className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 font-mono text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
               />
               <p className="mt-2 text-xs text-faint">
-                Stored only in this browser — never sent anywhere but your chosen provider.
+                This field is a setup aid only. The working gateway reads server env vars; pasted browser keys are not saved.
               </p>
             </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <GatewayCard
+                icon={ShieldCheck}
+                title="Recommended API gateway"
+                body="Create a server route that reads OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY or OPENROUTER_API_KEY from the server environment, then calls the selected provider."
+              />
+              <GatewayCard
+                icon={Globe2}
+                title="Site-wide job search"
+                body="Use Explore as the entry point: the user enters a board URL or company site, the backend crawls it, ranks roles against cv.md, and writes matches to the pipeline."
+              />
+            </div>
+            <div className="rounded-xl border border-border bg-surface/40 p-4 text-xs leading-6 text-muted">
+              <p className="font-semibold uppercase tracking-[0.16em] text-faint">Environment names</p>
+              <p className="mt-2 font-mono text-foreground">OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENROUTER_API_KEY</p>
+              <p className="mt-2">
+                On Vercel, add these under Project Settings - Environment Variables.
+                The browser should call your API route, never the provider directly.
+              </p>
+            </div>
+            <Link
+              href={`/config/gateway?provider=${provider}`}
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-brand/40 bg-brand-soft px-4 py-2 text-sm font-medium text-brand transition hover:bg-brand/15"
+            >
+              {selectedGatewayConnected ? "Open connection instructions" : "View setup instructions"}
+              <ExternalLink className="size-3.5" />
+            </Link>
           </div>
         )}
 
@@ -339,5 +403,23 @@ function ModeCard({
       <span className="text-sm font-medium text-foreground">{title}</span>
       <span className="text-xs text-faint">{hint}</span>
     </button>
+  );
+}
+
+function GatewayCard({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-surface/40 p-4">
+      <Icon className="size-4 text-brand" />
+      <h3 className="mt-2 text-sm font-medium text-foreground">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-muted">{body}</p>
+    </div>
   );
 }

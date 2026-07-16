@@ -1,9 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X, Ban, Clock, MapPin, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ATS_LABEL, ATS_SOURCES, cleanChips, type AtsSource, type ExploreFilters } from "@/lib/explore";
+
+const ROLE_SUGGESTIONS = [
+  "Junior Frontend Developer",
+  "Frontend Developer",
+  "Frontend Engineer",
+  "Front End Developer",
+  "React Developer",
+  "JavaScript Developer",
+  "TypeScript Developer",
+  "Next.js Developer",
+  "Mobile Developer",
+  "Mobile Application Developer",
+  "Mobile App Developer",
+  "Android Developer",
+  "iOS Developer",
+  "React Native Developer",
+  "Flutter Developer",
+  ".NET MAUI Developer",
+  "MAUI Developer",
+  "Xamarin Developer",
+  "Software Developer Intern",
+  "Frontend Intern",
+  "Mobile Developer Intern",
+  "Junior Software Developer",
+  "Junior Mobile Developer",
+  "Junior React Developer",
+];
+
+const EXCLUDE_SUGGESTIONS = [
+  "PHP",
+  "Ruby",
+  "Embedded",
+  "Firmware",
+  "FPGA",
+  "ASIC",
+  "Blockchain",
+  "Web3",
+  "Crypto",
+  "Salesforce Admin",
+  "SAP",
+  "Oracle EBS",
+  "Mainframe",
+  "COBOL",
+  "Senior",
+  "Lead",
+  "Staff",
+  "Principal",
+  "Manager",
+];
+
+const LOCATION_SUGGESTIONS = [
+  "Remote",
+  "Hybrid",
+  "On-site",
+  "Lagos",
+  "Nigeria",
+  "United Kingdom",
+  "Europe",
+  "EMEA",
+  "United States",
+  "Canada",
+  "Poland",
+  "Germany",
+  "Netherlands",
+  "Ireland",
+];
 
 const RECENCY = [
   { label: "24h", days: 1 },
@@ -22,68 +88,99 @@ html.dark .co-fb__chip.inc{color:hsl(26 86% 70%);background:hsl(26 80% 55% / .14
 .co-fb__field{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;min-height:2.6rem;padding:.45rem .55rem;border-radius:.7rem}
 .co-fb__field input{flex:1;min-width:7rem;background:transparent;border:none;outline:none;font-size:13.5px;color:inherit}
 .co-fb__field input::placeholder{color:var(--co-faint,hsl(0 0% 60%))}
+.co-fb__suggest{position:absolute;z-index:30;left:0;right:0;top:calc(100% + .35rem);max-height:13rem;overflow:auto;border-radius:.7rem;border:1px solid var(--co-border,hsl(0 0% 50% /.22));background:var(--bg);box-shadow:0 18px 40px hsl(0 0% 0% / .16);padding:.3rem}
+.co-fb__suggest button{display:block;width:100%;border-radius:.5rem;padding:.45rem .55rem;text-align:left;font-size:13px;color:inherit}
+.co-fb__suggest button:hover{background:hsl(26 73% 51% / .12);color:hsl(26 78% 48%)}
 `;
 
 function KeywordField({
   values,
   tone,
   placeholder,
+  suggestions = [],
   onChange,
 }: {
   values: string[];
   tone: "inc" | "exc";
   placeholder: string;
+  suggestions?: string[];
   onChange: (v: string[]) => void;
 }) {
   const [draft, setDraft] = useState("");
-  // Split only on UNAMBIGUOUS item separators (comma / newline / semicolon) — never
-  // bare spaces, which are legitimate inside multi-word entries ("AI platform",
-  // "New York", "Costa Rica"). A space-only paste stays one chip on purpose (#1147).
+  const [focused, setFocused] = useState(false);
+  const visibleSuggestions = useMemo(() => {
+    const needle = draft.trim().toLowerCase();
+    return suggestions
+      .filter((s) => !values.some((v) => v.toLowerCase() === s.toLowerCase()))
+      .filter((s) => needle.length < 2 || s.toLowerCase().includes(needle))
+      .slice(0, 10);
+  }, [draft, suggestions, values]);
+
   const commit = (text: string) => {
     const parts = text.split(/[,\n;\t\r]+/);
     const next = cleanChips([...values, ...parts]);
     onChange(next);
     setDraft("");
   };
+
   return (
-    <div className={cn("co-fb__field border border-border bg-surface/40 focus-within:border-brand/40 transition-colors")}>
-      {values.map((v) => (
-        <span key={v} className={cn("co-fb__chip", tone === "inc" ? "inc" : "border-border bg-surface-hover text-muted")}>
-          {tone === "exc" && <Ban className="size-3 opacity-70" />}
-          {v}
-          <button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(values.filter((x) => x !== v))}>
-            <X className="size-3" />
-          </button>
-        </span>
-      ))}
-      <input
-        value={draft}
-        onChange={(e) => {
-          const val = e.target.value;
-          if (/[,\n;\t\r]$/.test(val)) commit(val);
-          else setDraft(val);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && draft.trim()) {
+    <div className="relative">
+      <div className={cn("co-fb__field border border-border bg-surface/40 transition-colors focus-within:border-brand/40")}>
+        {values.map((v) => (
+          <span key={v} className={cn("co-fb__chip", tone === "inc" ? "inc" : "border-border bg-surface-hover text-muted")}>
+            {tone === "exc" && <Ban className="size-3 opacity-70" />}
+            {v}
+            <button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(values.filter((x) => x !== v))}>
+              <X className="size-3" />
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          onFocus={() => setFocused(true)}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (/[,;\n\t\r]$/.test(val)) commit(val);
+            else setDraft(val);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && draft.trim()) {
+              e.preventDefault();
+              commit(draft);
+            } else if (e.key === "Backspace" && !draft && values.length) {
+              onChange(values.slice(0, -1));
+            }
+          }}
+          onPaste={(e) => {
             e.preventDefault();
-            commit(draft);
-          } else if (e.key === "Backspace" && !draft && values.length) {
-            onChange(values.slice(0, -1));
-          }
-        }}
-        onPaste={(e) => {
-          e.preventDefault();
-          const text = e.clipboardData.getData("text");
-          const merged = draft + text;
-          // Only commit to chips when the paste contains item separators.
-          // A plain-text paste (e.g. pasting "-EMEA" after typing "Remote")
-          // stays in the input field so the user can keep editing.
-          if (/[,;\n\t\r]/.test(text)) commit(merged);
-          else setDraft(merged);
-        }}
-        onBlur={() => draft.trim() && commit(draft)}
-        placeholder={values.length ? "" : placeholder}
-      />
+            const text = e.clipboardData.getData("text");
+            const merged = draft + text;
+            if (/[,;\n\t\r]/.test(text)) commit(merged);
+            else setDraft(merged);
+          }}
+          onBlur={() => {
+            setFocused(false);
+            if (draft.trim()) commit(draft);
+          }}
+          placeholder={values.length ? "" : placeholder}
+        />
+      </div>
+      {focused && visibleSuggestions.length > 0 && (
+        <div className="co-fb__suggest">
+          {visibleSuggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                commit(suggestion);
+              }}
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -120,15 +217,27 @@ export function FilterBuilder({
 
       <div>
         <Label hint={filters.positive.length === 0 ? "empty = every fresh posting" : undefined}>Roles to find</Label>
-        <KeywordField values={filters.positive} tone="inc" placeholder="AI platform, ML infrastructure, staff engineer…" onChange={(v) => set({ positive: v })} />
+        <KeywordField
+          values={filters.positive}
+          tone="inc"
+          placeholder="Mobile, frontend, intern..."
+          suggestions={ROLE_SUGGESTIONS}
+          onChange={(v) => set({ positive: v })}
+        />
         {seededFrom.length > 0 && filters.positive.length > 0 && (
-          <p className="mt-1 text-[11px] text-faint">Seeded from your {seededFrom.join(" + ")} — edit freely.</p>
+          <p className="mt-1 text-[11px] text-faint">Seeded from your {seededFrom.join(" + ")} - edit freely.</p>
         )}
       </div>
 
       <div>
         <Label>Exclude</Label>
-        <KeywordField values={filters.negative} tone="exc" placeholder="manager, sales, contract…" onChange={(v) => set({ negative: v })} />
+        <KeywordField
+          values={filters.negative}
+          tone="exc"
+          placeholder="manager, sales, contract..."
+          suggestions={EXCLUDE_SUGGESTIONS}
+          onChange={(v) => set({ negative: v })}
+        />
       </div>
 
       <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
@@ -181,7 +290,7 @@ export function FilterBuilder({
       <button
         type="button"
         onClick={() => setAdvanced((v) => !v)}
-        className="inline-flex items-center gap-1.5 text-[12px] text-muted hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-[12px] text-muted transition-colors hover:text-foreground"
       >
         <SlidersHorizontal className="size-3.5" />
         Location &amp; scope
@@ -196,15 +305,15 @@ export function FilterBuilder({
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <Label hint="rescues multi-loc posts">Always include</Label>
-              <KeywordField values={filters.alwaysAllow} tone="inc" placeholder="London…" onChange={(v) => set({ alwaysAllow: v })} />
+              <KeywordField values={filters.alwaysAllow} tone="inc" placeholder="London..." suggestions={LOCATION_SUGGESTIONS} onChange={(v) => set({ alwaysAllow: v })} />
             </div>
             <div>
               <Label>Only in</Label>
-              <KeywordField values={filters.allow} tone="inc" placeholder="Remote, EMEA…" onChange={(v) => set({ allow: v })} />
+              <KeywordField values={filters.allow} tone="inc" placeholder="Remote, EMEA..." suggestions={LOCATION_SUGGESTIONS} onChange={(v) => set({ allow: v })} />
             </div>
             <div>
               <Label>Never in</Label>
-              <KeywordField values={filters.block} tone="exc" placeholder="India…" onChange={(v) => set({ block: v })} />
+              <KeywordField values={filters.block} tone="exc" placeholder="India..." suggestions={LOCATION_SUGGESTIONS} onChange={(v) => set({ block: v })} />
             </div>
           </div>
           <div>

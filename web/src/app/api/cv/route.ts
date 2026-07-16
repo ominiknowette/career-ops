@@ -12,7 +12,15 @@ const MAX_CV_BYTES = 200_000;
 
 export async function GET() {
   try {
-    return NextResponse.json({ content: fs.readFileSync(cvPath(), "utf8"), exists: true });
+    const file = cvPath();
+    const content = fs.readFileSync(file, "utf8");
+    const stat = fs.statSync(file);
+    return NextResponse.json({
+      content,
+      exists: true,
+      bytes: stat.size,
+      updatedAt: stat.mtime.toISOString(),
+    });
   } catch {
     return NextResponse.json({ content: "", exists: false });
   }
@@ -25,18 +33,33 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "bad json" }, { status: 400 });
   }
+
   if (typeof body.content !== "string") {
     return NextResponse.json({ error: "content required" }, { status: 400 });
   }
+
   if (Buffer.byteLength(body.content, "utf8") > MAX_CV_BYTES) {
     return NextResponse.json({ error: "CV is too large (over 200KB)" }, { status: 413 });
   }
-  // DATA_CONTRACT: cv.md is user-layer and gitignored (no git recovery). Never
-  // blind-overwrite — snapshot the prior CV to a .bak first, write atomically.
+
   try {
-    const bak = atomicWriteWithBackup(cvPath(), body.content);
-    return NextResponse.json({ ok: true, backedUp: !!bak });
-  } catch {
-    return NextResponse.json({ error: "write failed" }, { status: 500 });
+    const file = cvPath();
+    const bak = atomicWriteWithBackup(file, body.content);
+    const saved = fs.readFileSync(file, "utf8");
+    if (saved !== body.content) {
+      return NextResponse.json({ error: "write verification failed" }, { status: 500 });
+    }
+    const stat = fs.statSync(file);
+    return NextResponse.json({
+      ok: true,
+      backedUp: Boolean(bak),
+      bytes: stat.size,
+      updatedAt: stat.mtime.toISOString(),
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "write failed" },
+      { status: 500 },
+    );
   }
 }

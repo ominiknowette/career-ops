@@ -1,54 +1,66 @@
-# career-ops web (alpha)
+# career-ops web
 
-An **experimental, opt-in web UI** for career-ops. It is a local-first *view* over
-the exact same files the CLI reads and writes (`data/pipeline.md`,
-`data/applications.md`, `reports/`, `config/`): no parallel engine, no separate
-database, no server. If you never run it, nothing about your CLI workflow changes.
+The Career-Ops web app is the hosted onboarding and documentation experience for
+the local-first Career-Ops agent workflow.
 
-> **Status: alpha.** Expect rough edges. Feedback →
-> [Discussion #1142](https://github.com/santifer/career-ops/discussions/1142) ·
-> roadmap context → [Discussion #156](https://github.com/santifer/career-ops/discussions/156).
+It gives users:
 
-## Quick start
+- Firebase sign up and sign in
+- A first-run CV paste step
+- A signed-in CV Profile page
+- A documentation dashboard for installation, agent setup, API keys, and common workflows
+- A light/dark theme toggle
+
+The app does not replace the local agent. Career-Ops evaluations, scans, tailored
+CV generation, and report writing still run from the Career-Ops checkout through a
+supported AI coding agent or CLI.
+
+## Local Development
 
 Requires Node 20+.
 
 ```bash
 cd web
-npm ci
+npm install
 npm run dev
 ```
 
-Open http://localhost:3000. The app reads the career-ops checkout it lives in
-(the parent directory) — your existing CV, pipeline and reports appear as-is.
+Open `http://localhost:3000`.
 
-## What works today
+## Firebase Setup
 
-- **Pipeline** — your tracker as a sortable, filterable table; status changes
-  write back through the core's own scripts.
-- **Explore** — the free reverse-ATS scan with an honest partial-dataset
-  indicator, plus AI-assisted discovery (bring your own CLI/keys).
-- **Apply** — assisted form prefill with a hard rule inherited from the core:
-  **it never submits for you** — you always press the button.
-- **Today / Analytics / CV / Config** — action queue, funnel, CV editing with
-  preview, settings.
+Create `web/.env.local` with the Firebase client values:
 
-## Safety
-
-- **Local-first:** the local web app runs entirely on your machine — no cloud,
-  no account needed. Your CV and data stay in your own files.
-- **Never auto-submits:** the apply flow drafts and prefills; submitting is
-  always a human action.
-- **Additive:** the web is isolated from the core's packaging, CI and release
-  automation. The CLI works exactly the same without it.
-
-## Development
-
-```bash
-npm run dev          # dev server (Turbopack)
-npx tsc --noEmit     # typecheck
-npm run build        # production build
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
 ```
 
-Set `CAREER_OPS_ROOT=/path/to/checkout` in `web/.env.local` to point the app at
-a different career-ops directory (useful for testing against sample data).
+Enable Email/Password and Google sign-in in the Firebase console.
+
+## Vercel
+
+Use these settings:
+
+- Framework preset: Next.js
+- Root directory: `web`
+- Build command: `npm run build`
+- Output directory: leave default
+
+Add the Firebase values above in Vercel Project Settings -> Environment
+Variables. Add server-side provider keys such as `GEMINI_API_KEY` and
+`OPENROUTER_API_KEY` there as well if the hosted docs need to show gateway
+status.
+
+Do not commit `.env`, `.env.local`, `.next`, or `node_modules`.
+
+## Verification
+
+```bash
+npm run typecheck
+npm run build
+```

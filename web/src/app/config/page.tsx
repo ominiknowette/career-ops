@@ -1,5 +1,5 @@
-import { ConfigForm } from "@/components/config-form";
+import { redirect } from "next/navigation";
 
 export default function ConfigPage() {
-  return <ConfigForm />;
+  redirect("/dashboard#connect-your-agent");
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Compass, ChevronDown, RotateCcw, AlertTriangle, Sparkles, Settings } from "lucide-react";
+import { Compass, ChevronDown, RotateCcw, AlertTriangle, Sparkles, Settings, LinkIcon, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { instrumentSerif } from "@/lib/fonts";
@@ -26,6 +26,13 @@ const CLI_NAMES: Record<string, string> = {
   antigravity: "Antigravity CLI",
 };
 
+const PROVIDER_NAMES: Record<string, string> = {
+  anthropic: "Anthropic key",
+  openai: "OpenAI key",
+  google: "Gemini key",
+  openrouter: "OpenRouter key",
+};
+
 export function ExplorerView({
   seed,
   inboxSnapshot,
@@ -44,16 +51,32 @@ export function ExplorerView({
       : undefined;
   const inited = useRef(false);
   const [refineOpen, setRefineOpen] = useState(false);
-  const [cli, setCli] = useState<{ id: string | null; name?: string }>({ id: null });
+  const [engine, setEngine] = useState<{ cliId: string | null; provider: string | null; name?: string; kind: "cli" | "key" | null }>({ cliId: null, provider: null, kind: null });
   const [firstRun, setFirstRun] = useState(false);
+  const [siteUrl, setSiteUrl] = useState("");
+  const [siteStatus, setSiteStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [siteMessage, setSiteMessage] = useState("");
 
   useEffect(() => {
-    try {
-      const id = JSON.parse(localStorage.getItem("career-ops:config") || "{}").cliId || null;
-      setCli({ id, name: id ? CLI_NAMES[id] || id : undefined });
-    } catch {
-      setCli({ id: null });
-    }
+    const loadEngine = () => {
+      try {
+        const config = JSON.parse(localStorage.getItem("career-ops:config") || "{}");
+        const cliId = config.cliId || null;
+        const provider = config.provider || null;
+        if (cliId) {
+          setEngine({ cliId, provider, name: CLI_NAMES[cliId] || cliId, kind: "cli" });
+        } else if (config.mode === "key" && provider) {
+          setEngine({ cliId: null, provider, name: PROVIDER_NAMES[provider] || `${provider} key`, kind: "key" });
+        } else {
+          setEngine({ cliId: null, provider: null, kind: null });
+        }
+      } catch {
+        setEngine({ cliId: null, provider: null, kind: null });
+      }
+    };
+    loadEngine();
+    window.addEventListener("career-ops:config-updated", loadEngine);
+    return () => window.removeEventListener("career-ops:config-updated", loadEngine);
   }, []);
 
   // Initialize once from the URL (shareable search) or the server seed — without
@@ -95,7 +118,7 @@ export function ExplorerView({
   );
 
   const isAi = mode === "ai";
-  if (running) return isAi ? <AiHuntView cliName={cli.name} /> : <DiscoveringState />;
+  if (running) return isAi ? <AiHuntView cliName={engine.name} /> : <DiscoveringState />;
 
   const canDiscover = filters.ats.length > 0;
   const isResults = phase === "results";
@@ -110,7 +133,7 @@ export function ExplorerView({
             <span className="rounded-full border border-brand/30 bg-brand-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">New</span>
           </div>
           <div className="w-full sm:ml-auto sm:w-auto">
-            <ExploreModeToggle mode={mode} onChange={setMode} cliConfigured={!!cli.id} />
+            <ExploreModeToggle mode={mode} onChange={setMode} cliConfigured={engine.kind === "cli"} />
           </div>
         </div>
         {!isResults && (
@@ -128,6 +151,44 @@ export function ExplorerView({
         </div>
       )}
 
+      <SiteIntakeCard
+        value={siteUrl}
+        status={siteStatus}
+        message={siteMessage}
+        onChange={(value) => {
+          setSiteUrl(value);
+          if (siteStatus !== "saving") {
+            setSiteStatus("idle");
+            setSiteMessage("");
+          }
+        }}
+        onSubmit={async () => {
+          const url = siteUrl.trim();
+          if (!url) return;
+          setSiteStatus("saving");
+          setSiteMessage("");
+          try {
+            const res = await fetch("/api/explore/intake", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url }),
+            });
+            const body = (await res.json()) as { added?: number; error?: string };
+            if (!res.ok || body.error) throw new Error(body.error || "Could not add this URL.");
+            setSiteStatus("saved");
+            setSiteMessage("Queued in Pipeline. Use Evaluate there, or expand it later through the gateway crawler.");
+            setSiteUrl("");
+          } catch (err) {
+            setSiteStatus("error");
+            setSiteMessage(
+              err instanceof Error
+                ? err.message
+                : "Could not add this URL. Try pasting the full LinkedIn job URL, including linkedin.com/jobs/view/...",
+            );
+          }
+        }}
+      />
+
       {isAi ? (
         phase === "blocked" ? (
           <BlockedCard />
@@ -137,8 +198,9 @@ export function ExplorerView({
               intent={aiIntent}
               onIntent={setAiIntent}
               onSubmit={() => void discoverAI()}
-              cliConfigured={!!cli.id}
-              cliName={cli.name}
+              cliConfigured={engine.kind === "cli"}
+              cliName={engine.name}
+              engineKind={engine.kind}
               onRunScan={() => setMode("scan")}
             />
             {phase === "results" && <ResultsList offers={enriched} />}
@@ -230,6 +292,77 @@ export function ExplorerView({
           )}
           {phase === "failed" && <FailedCard msg={error || status} onRetry={() => void discover()} />}
         </>
+      )}
+    </div>
+  );
+}
+
+function SiteIntakeCard({
+  value,
+  status,
+  message,
+  onChange,
+  onSubmit,
+}: {
+  value: string;
+  status: "idle" | "saving" | "saved" | "error";
+  message: string;
+  onChange: (value: string) => void;
+  onSubmit: () => Promise<void>;
+}) {
+  return (
+    <div className="mb-6 rounded-xl border border-border bg-surface/30 p-4">
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
+          <LinkIcon className="size-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-sm font-semibold text-foreground">Scan or queue a specific site</p>
+            <span className="rounded-full border border-border bg-surface/60 px-2 py-0.5 text-[11px] text-muted">
+              gateway-ready
+            </span>
+          </div>
+          <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted">
+            Paste a job post, company careers page, LinkedIn search, or job board URL. Today this queues the source in
+            Pipeline for evaluation; the API gateway can expand this into crawling and CV-based ranking.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && value.trim() && status !== "saving") void onSubmit();
+          }}
+          placeholder="https://www.linkedin.com/jobs/search/?keywords=frontend%20intern"
+          className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50 focus-visible:ring-2 focus-visible:ring-brand/30"
+        />
+        <button
+          type="button"
+          disabled={!value.trim() || status === "saving"}
+          onClick={() => void onSubmit()}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+        >
+          {status === "saving" ? <Loader2 className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}
+          Add to Pipeline
+        </button>
+      </div>
+
+      {message && (
+        <div
+          className={cn(
+            "mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-[13px]",
+            status === "saved"
+              ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : "border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300",
+          )}
+        >
+          {status === "saved" ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" /> : <AlertTriangle className="mt-0.5 size-4 shrink-0" />}
+          <span>{message}</span>
+        </div>
       )}
     </div>
   );
@@ -373,9 +506,9 @@ function BlockedCard() {
       <div className="mx-auto grid size-12 place-items-center rounded-full bg-brand-soft text-brand">
         <Sparkles className="size-6" />
       </div>
-      <h2 className={`${instrumentSerif.className} mt-4 text-2xl text-foreground`}>AI search needs a CLI</h2>
+      <h2 className={`${instrumentSerif.className} mt-4 text-2xl text-foreground`}>AI search needs setup</h2>
       <p className="mx-auto mt-1.5 max-w-md text-sm text-muted">
-        Connect Claude Code, Gemini, or any agent CLI — your key, your tokens, your machine. The free Scan stays available without one.
+        Connect an installed AI tool or save an API-key provider in Config. The free Scan stays available without one.
       </p>
       <Link href="/config" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-sm font-semibold text-white transition hover:brightness-110">
         <Settings className="size-4" /> Open Config

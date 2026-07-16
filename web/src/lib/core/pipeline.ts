@@ -1,82 +1,125 @@
-import { spawn } from "node:child_process";
 import fs from "node:fs";
-import { pathToFileURL } from "node:url";
-import { careerOpsRoot, rootScript } from "@/lib/career-ops";
-import type { DiscoveredOffer } from "./scan";
+import path from "node:path";
+import { careerOpsRoot } from "@/lib/career-ops";
+import { atomicWriteWithBackup } from "@/lib/core/safe-write";
+import type { DiscoveredOffer } from "@/lib/explore";
 
-/**
- * "Add to pipeline" — appends user-selected discovered offers to data/pipeline.md
- * AND records them in data/scan-history.tsv (so future scans dedup them). We reuse
- * the CANONICAL writers exported by the core's scan.mjs (`appendToPipeline`,
- * `appendToScanHistory`) instead of re-implementing the line format / section
- * markers — single source of truth, per the web↔core contract. We invoke them in
- * a short-lived node process (cwd = the user's career-ops root) so the core's own
- * code does the writing; the web never owns a parallel copy of that logic.
- *
- * Discovered-but-not-added offers stay "new" (a dry-run scan writes nothing);
- * only an explicit add records them as seen. No tokens are spent here.
- */
 export type AddResult = { added: number; error?: string };
 
-export function addOffersToPipeline(offers: DiscoveredOffer[]): Promise<AddResult> {
-  const clean = offers
-    .filter((o) => o && typeof o.url === "string" && /^https?:\/\//i.test(o.url))
-    .map((o) => ({
-      url: o.url,
-      company: o.company || "",
-      title: o.title || "",
-      location: o.location || "",
-      source: o.source || o.ats || "explorer",
-      // Preserve the optional per-offer signal so it survives to pipeline.md.
-      // The core writer treats an empty note as absent (byte-identical output).
-      note: o.note || "",
-    }));
-  if (clean.length === 0) return Promise.resolve({ added: 0 });
+const PIPELINE_SKELETON = `# Pipeline -- Pending URLs
 
-  // Data-only / pre-scan-ats checkout has no scan.mjs writers → fail with an
-  // actionable message instead of a silent added:0.
-  if (!fs.existsSync(rootScript("scan"))) {
-    return Promise.resolve({ added: 0, error: "This checkout is data-only — the pipeline writer (scan.mjs) isn't available." });
-  }
+Paste job URLs below as \`- [ ] {url}\` then run \`/career-ops pipeline\`.
 
-  const scanUrl = pathToFileURL(rootScript("scan")).href;
-  const code = `
-import { appendToPipeline, appendToScanHistory } from ${JSON.stringify(scanUrl)};
-let input = "";
-process.stdin.setEncoding("utf8");
-process.stdin.on("data", (d) => { input += d; });
-process.stdin.on("end", () => {
-  try {
-    const offers = JSON.parse(input);
-    const date = new Date().toISOString().slice(0, 10);
-    appendToPipeline(offers);
-    appendToScanHistory(offers, date, "added");
-    process.stdout.write(JSON.stringify({ added: offers.length }));
-  } catch (e) {
-    process.stdout.write(JSON.stringify({ added: 0, error: String((e && e.message) || e) }));
-  }
-});
+## Pending
+
+## Processed
 `;
 
-  return new Promise((resolve) => {
-    const child = spawn(process.execPath, ["--input-type=module", "-e", code], {
-      cwd: careerOpsRoot(),
-      env: process.env,
-    });
-    let out = "";
-    let err = "";
-    child.stdout.on("data", (d: Buffer) => (out += d.toString()));
-    child.stderr.on("data", (d: Buffer) => (err += d.toString()));
-    child.on("error", (e) => resolve({ added: 0, error: e instanceof Error ? e.message : "spawn failed" }));
-    child.on("close", () => {
-      try {
-        const parsed = JSON.parse(out.trim() || "{}") as AddResult;
-        resolve({ added: parsed.added ?? 0, error: parsed.error });
-      } catch {
-        resolve({ added: 0, error: err.trim().slice(0, 200) || "writer returned no result" });
-      }
-    });
-    child.stdin.write(JSON.stringify(clean));
-    child.stdin.end();
-  });
+const PENDING_MARKERS = ["## Pending", "## Pendientes"];
+const PROCESSED_MARKERS = ["## Processed", "## Procesadas"];
+
+type CleanOffer = {
+  url: string;
+  company: string;
+  title: string;
+  location: string;
+  source: string;
+};
+
+function cleanField(value: unknown): string {
+  return String(value ?? "")
+    .replace(/[\r\n\t|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function cleanUrl(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
+function formatPipelineOffer(offer: CleanOffer): string {
+  const base = `- [ ] ${offer.url} | ${offer.company} | ${offer.title}`;
+  return offer.location ? `${base} | ${offer.location}` : base;
+}
+
+function scanHistoryRow(offer: CleanOffer, date: string): string {
+  return [
+    offer.url,
+    date,
+    offer.source || "site-intake",
+    offer.title,
+    offer.company,
+    "added",
+    offer.location,
+  ]
+    .map(cleanField)
+    .join("\t");
+}
+
+function insertIntoPending(text: string, lines: string[]): string {
+  const marker = PENDING_MARKERS.find((m) => text.includes(m)) ?? null;
+  const block = `\n${lines.join("\n")}\n`;
+
+  if (!marker) {
+    const processedAt = PROCESSED_MARKERS.reduce((found, m) => {
+      const i = text.indexOf(m);
+      return found === -1 || (i !== -1 && i < found) ? i : found;
+    }, -1);
+    const insertAt = processedAt === -1 ? text.length : processedAt;
+    return `${text.slice(0, insertAt).trimEnd()}\n\n## Pending${block}\n${text.slice(insertAt).trimStart()}`;
+  }
+
+  const afterMarker = text.indexOf(marker) + marker.length;
+  const nextSection = text.indexOf("\n## ", afterMarker);
+  const insertAt = nextSection === -1 ? text.length : nextSection;
+  return text.slice(0, insertAt).trimEnd() + block + text.slice(insertAt);
+}
+
+function existingPipelineUrls(text: string): Set<string> {
+  const urls = new Set<string>();
+  for (const line of text.split("\n")) {
+    const match = line.match(/^\s*-\s*\[[ xX]\]\s*([^|]+)/);
+    if (match?.[1]) urls.add(match[1].trim());
+  }
+  return urls;
+}
+
+export async function addOffersToPipeline(offers: DiscoveredOffer[]): Promise<AddResult> {
+  const clean: CleanOffer[] = offers
+    .map((offer) => ({
+      url: cleanUrl(offer.url),
+      company: cleanField(offer.company),
+      title: cleanField(offer.title),
+      location: cleanField(offer.location),
+      source: cleanField(offer.source || offer.ats || "site-intake"),
+    }))
+    .filter((offer) => /^https?:\/\//i.test(offer.url));
+
+  if (clean.length === 0) return { added: 0, error: "No valid URLs to add." };
+
+  const root = careerOpsRoot();
+  const dataDir = path.join(root, "data");
+  const pipelinePath = path.join(dataDir, "pipeline.md");
+  const historyPath = path.join(dataDir, "scan-history.tsv");
+  fs.mkdirSync(dataDir, { recursive: true });
+
+  let pipelineText = fs.existsSync(pipelinePath)
+    ? fs.readFileSync(pipelinePath, "utf8")
+    : PIPELINE_SKELETON;
+
+  const existing = existingPipelineUrls(pipelineText);
+  const fresh = clean.filter((offer) => !existing.has(offer.url));
+  if (fresh.length === 0) return { added: 0 };
+
+  pipelineText = insertIntoPending(pipelineText, fresh.map(formatPipelineOffer));
+  atomicWriteWithBackup(pipelinePath, pipelineText);
+
+  const date = new Date().toISOString().slice(0, 10);
+  const currentHistory = fs.existsSync(historyPath)
+    ? fs.readFileSync(historyPath, "utf8")
+    : "url\tfirst_seen\tportal\ttitle\tcompany\tstatus\tlocation\n";
+  const historyBlock = fresh.map((offer) => scanHistoryRow(offer, date)).join("\n");
+  atomicWriteWithBackup(historyPath, `${currentHistory.trimEnd()}\n${historyBlock}\n`);
+
+  return { added: fresh.length };
 }
