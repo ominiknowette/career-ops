@@ -165,11 +165,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [activeSection, setActiveSection] = useActiveDocSection(pathname);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const authPage = pathname === "/" || pathname === "/login";
+  const publicPage = ["/", "/auth", "/login", "/signup", "/terms", "/privacy", "/help"].includes(pathname);
 
   const groups = useMemo(() => DOC_NAV_GROUPS, []);
 
-  if (authPage) return <>{children}</>;
+  if (publicPage) return <>{children}</>;
 
   async function logout() {
     try {

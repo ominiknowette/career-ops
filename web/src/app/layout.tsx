@@ -4,11 +4,11 @@ import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "career-ops - official web experience",
-  description: "The official, local-first web experience for career-ops.",
+  title: "AutoJobServe - AI job search and auto apply",
+  description: "AutoJobServe helps job seekers discover roles, auto apply, and track their job search.",
   // Home-screen / standalone (iOS): let our theme-color flow up to the status bar
   // + Dynamic Island; safe-area insets handle the layout.
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "career-ops" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "AutoJobServe" },
 };
 
 export const viewport: Viewport = {

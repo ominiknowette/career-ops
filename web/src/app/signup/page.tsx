@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { AutoJobServeAuthPage } from "@/components/autojobserve/auth-page";
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <Suspense>
-      <AutoJobServeAuthPage defaultMode="login" />
+      <AutoJobServeAuthPage defaultMode="signup" />
     </Suspense>
   );
 }

@@ -1,5 +1,5 @@
-import { LandingHero } from "@/components/landing-hero";
+import { AutoJobServeLandingPage } from "@/components/autojobserve/landing-page";
 
 export default function Home() {
-  return <LandingHero />;
+  return <AutoJobServeLandingPage />;
 }
